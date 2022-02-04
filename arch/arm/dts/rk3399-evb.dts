@@ -11,52 +11,31 @@
 #include "rk3399-sdram-lpddr3-4GB-1600.dtsi"
 #include "rk3399-u-boot.dtsi"
 #include <linux/media-bus-format.h>
-#include <dt-bindings/input/input.h>
 
 / {
 	model = "Rockchip RK3399 Evaluation Board";
-	compatible = "rockchip,rk3399-evb", "rockchip,rk3399",
+	compatible = "rockchip,rk3399-evb", "pine64,rockpro64", "rockchip,rk3399",
 		     "google,rk3399evb-rev2";
 
-	/* RK3399 evb board */
-	rk_key0 {
-		u-boot,dm-pre-reloc;
-		compatible = "rockchip,key";
-		status = "okay";
-		io-channels = <&saradc 1>;
-
-		vol-up-key0 {
-			u-boot,dm-pre-reloc;
-			linux,code = <KEY_VOLUMEUP>;
-			label = "volume up";
-			rockchip,adc_value = <1>;
-		};
+	config {
+		sysreset-gpio = <&gpio1 RK_PA6 GPIO_ACTIVE_HIGH>;
 	};
 
-	/* RK3399PRO evb board */
-	rk_key1 {
-		u-boot,dm-pre-reloc;
-		compatible = "rockchip,key";
-		status = "okay";
-		io-channels = <&saradc 2>;
-
-		vol-up-key1 {
-			u-boot,dm-pre-reloc;
-			linux,code = <KEY_VOLUMEUP>;
-			label = "volume up";
-			rockchip,adc_value = <10>;
-		};
+	chosen {
+		stdout-path = &uart2;
+		u-boot,spl-boot-order = &sdhci, &sdmmc;
 	};
 
-	vdd_center: vdd-center {
+	motor_pwm: motor_pwm {
 		compatible = "pwm-regulator";
 		pwms = <&pwm3 0 25000 1>;
-		regulator-name = "vdd_center";
+		regulator-name = "motor_pwm";
 		regulator-min-microvolt = <800000>;
 		regulator-max-microvolt = <1400000>;
-		regulator-init-microvolt = <950000>;
+		regulator-init-microvolt = <1100000>;
 		regulator-always-on;
 		regulator-boot-on;
+		boot_on_time_msec = <300>;
 		status = "okay";
 	};
 
@@ -190,15 +169,15 @@
 			native-mode = <&timing0>;
 
 			timing0: timing0 {
-				clock-frequency = <200000000>;
-				hactive = <1536>;
-				vactive = <2048>;
-				hfront-porch = <12>;
-				hsync-len = <16>;
-				hback-porch = <48>;
-				vfront-porch = <8>;
-				vsync-len = <4>;
-				vback-porch = <8>;
+				clock-frequency = <150000000>;
+				hactive = <1152>;
+				vactive = <1920>;
+				hfront-porch = <64>;
+				hsync-len = <4>;
+				hback-porch = <32>;
+				vfront-porch = <56>;
+				vsync-len = <3>;
+				vback-porch = <6>;
 				hsync-active = <0>;
 				vsync-active = <0>;
 				de-active = <0>;
@@ -213,14 +192,31 @@
 		};
 	};
 
+	leds: gpio-leds {
+			compatible = "gpio-leds";
+			pinctrl-names = "default";
+			pinctrl-0 =<&leds_gpio>;
+
+			led@1 {
+					gpios = <&gpio1 RK_PC4 GPIO_ACTIVE_HIGH>;
+					label = "battery_green";
+					default-state= "on";
+				//	retain-state-suspended;
+			};
+			
+			led@2 {
+					gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_HIGH>;
+					label = "battery_red";
+					default-state= "on";
+				//	retain-state-suspended;
+			};
+			
+	};
+
 };
 
-&crypto {
-	status = "okay";
-};
-
-&uart2 {
-	status = "okay";
+&gpio1  {
+	u-boot,dm-pre-reloc;
 };
 
 &emmc_phy {
@@ -250,17 +246,10 @@
 
 &sdhci {
 	bus-width = <8>;
-	mmc-hs400-1_8v;
-	mmc-hs400-enhanced-strobe;
+	//mmc-hs400-1_8v;
+	//mmc-hs400-enhanced-strobe;
+	mmc-hs200-1_8v;
 	non-removable;
-	status = "okay";
-};
-
-&tcphy0 {
-	status = "okay";
-};
-
-&tcphy1 {
 	status = "okay";
 };
 
@@ -272,19 +261,8 @@
 	status = "okay";
 };
 
-&usbdrd3_0 {
-	status = "okay";
-};
-
-&usbdrd3_1 {
-	status = "okay";
-};
-
-&usbdrd_dwc3_0 {
-	status = "okay";
-};
-
-&usbdrd_dwc3_1 {
+&dwc3_typec0 {
+	vbus-supply = <&vcc5v0_typec0>;
 	status = "okay";
 };
 
@@ -293,6 +271,11 @@
 };
 
 &usb_host1_ohci {
+	status = "okay";
+};
+
+&dwc3_typec1 {
+	vbus-supply = <&vcc5v0_typec1>;
 	status = "okay";
 };
 
@@ -322,8 +305,43 @@
 				regulator-boot-on;
 				regulator-name = "vcc33_lcd";
 			};
+                        vdd_cpu_l: DCDC_REG2 {
+                                regulator-always-on;
+                                regulator-boot-on;
+                                regulator-min-microvolt = <750000>;
+                                regulator-max-microvolt = <1350000>;
+                                regulator-ramp-delay = <6001>;
+                                regulator-name = "vdd_cpu_l";
+                                regulator-state-mem {
+                                        regulator-off-in-suspend;
+                                };
+                        };
 		};
 	};
+};
+
+&i2c8 {
+        status = "okay";
+        clock-frequency = <400000>;
+
+        vdd_cpu_b: fan53555@60 {
+                compatible = "fcs,fan53555";
+                reg = <0x60>;
+                vsel-gpios = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;
+                vin-supply = <&vcc5v0_sys>;
+                regulator-compatible = "fan53555-reg";
+                regulator-name = "vdd_cpu_b";
+                regulator-min-microvolt = <600000>;
+                regulator-max-microvolt = <1230000>;
+                regulator-ramp-delay = <1000>;
+                fcs,suspend-voltage-selector = <1>;
+                regulator-always-on;
+                regulator-boot-on;
+                regulator-initial-state = <3>;
+                        regulator-state-mem {
+                        regulator-off-in-suspend;
+                };
+        };
 };
 
 &mipi_dsi {
@@ -332,18 +350,18 @@
 	display-timings {
 		timing0 {
 		bits-per-pixel = <24>;
-		clock-frequency = <160000000>;
-		hfront-porch = <120>;
-		hsync-len = <20>;
-		hback-porch = <21>;
-		hactive = <1200>;
-		vfront-porch = <21>;
-		vsync-len = <3>;
-		vback-porch = <18>;
+		clock-frequency = <150000000>;
+		hactive = <1152>;
 		vactive = <1920>;
+		hfront-porch = <64>;
+		hsync-len = <4>;
+		hback-porch = <32>;
+		vfront-porch = <56>;
+		vsync-len = <3>;
+		vback-porch = <6>;
 		hsync-active = <0>;
 		vsync-active = <0>;
-		de-active = <1>;
+		de-active = <0>;
 		pixelclk-active = <0>;
 		};
 	};
@@ -361,6 +379,20 @@
 				<1 18 RK_FUNC_GPIO &pcfg_pull_down>;
 		};
 	};
+ 	gpio-leds {
+			leds_gpio: leds-gpio {
+					rockchip,pins =
+							<1 RK_PC4 RK_FUNC_GPIO &pcfg_pull_up>,
+							<3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_up>;
+			};
+	};
+        i2c8 {
+                i2c8_xfer_a: i2c8-xfer {
+                        rockchip,pins =
+                                <RK_GPIO1 RK_PC5 RK_FUNC_1 &pcfg_pull_up>,
+                                <RK_GPIO1 RK_PC4 RK_FUNC_1 &pcfg_pull_up>;
+                };
+        };
 };
 
 &gmac {

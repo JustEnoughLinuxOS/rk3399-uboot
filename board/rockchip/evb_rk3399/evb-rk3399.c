@@ -23,10 +23,33 @@ DECLARE_GLOBAL_DATA_PTR;
 #define RK3399_CPUID_OFF  0x7
 #define RK3399_CPUID_LEN  0x10
 
+static void cpu_regulator_init(const char *name, int value)
+{
+       struct udevice *regulator;
+       int ret;
+
+       ret = regulator_get_by_platname(name, &regulator);
+       if (ret) {
+               debug("%s %s init failed! ret %d\n", __func__, name, ret);
+               return;
+       }
+
+       ret = regulator_set_value(regulator, value);
+       if (ret)
+               debug("%s %s set failed! ret %d\n", __func__, name, ret);
+
+       ret = regulator_set_enable(regulator, true);
+       if (ret)
+               debug("%s %s enabled failed! ret %d\n", __func__, name, ret);
+}
+
 int rk_board_init(void)
 {
 	struct udevice *pinctrl, *regulator;
 	int ret;
+
+	cpu_regulator_init("vdd_cpu_l", 925000);
+	cpu_regulator_init("vdd_cpu_b", 1050000);
 
 	/*
 	 * The PWM does not have decicated interrupt number in dts and can
@@ -73,6 +96,8 @@ int rk_board_init(void)
 out:
 	return 0;
 }
+
+
 
 static void setup_macaddr(void)
 {

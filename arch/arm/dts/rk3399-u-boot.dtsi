@@ -9,25 +9,12 @@
 		mmc0 = &sdhci;
 		mmc1 = &sdmmc;
 	};
-
-	chosen {
-		stdout-path = &uart2;
-		u-boot,spl-boot-order = &sdhci, &sdmmc;
-	};
-};
-
-&psci {
-	u-boot,dm-pre-reloc;
-	status = "okay";
 };
 
 &uart2 {
 	clock-frequency = <24000000>;
 	u-boot,dm-pre-reloc;
-};
-
-&saradc {
-	u-boot,dm-pre-reloc;
+	status = "okay";
 };
 
 &sdmmc {
@@ -35,10 +22,6 @@
 };
 
 &sdhci {
-	u-boot,dm-pre-reloc;
-};
-
-&pmu {
 	u-boot,dm-pre-reloc;
 };
 
@@ -58,10 +41,6 @@
 	u-boot,dm-pre-reloc;
 };
 
-&crypto {
-	u-boot,dm-pre-reloc;
-};
-
 &grf {
 	u-boot,dm-pre-reloc;
 };
@@ -74,16 +53,14 @@
 	u-boot,dm-pre-reloc;
 };
 
+&dwc3_typec0 {
+	u-boot,dm-pre-reloc;
+};
+
+&dwc3_typec1 {
+	u-boot,dm-pre-reloc;
+};
+
 &emmc_phy {
 	u-boot,dm-pre-reloc;
-};
-
-&u2phy0 {
-	u-boot,dm-pre-reloc;
-	status = "okay";
-};
-
-&u2phy0_otg {
-	u-boot,dm-pre-reloc;
-	status = "okay";
 };

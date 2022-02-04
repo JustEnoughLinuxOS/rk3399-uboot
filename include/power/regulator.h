@@ -173,6 +173,7 @@ struct dm_regulator_uclass_platdata {
 	int max_uA;
 	bool always_on;
 	bool boot_on;
+	int boot_on_time_msec;
 	const char *name;
 	int flags;
 	u8 ctrl_reg;

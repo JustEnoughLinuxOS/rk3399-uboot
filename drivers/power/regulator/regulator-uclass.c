@@ -298,6 +298,15 @@ int regulator_autoset(struct udevice *dev)
 	if (!ret)
 		ret = regulator_set_enable(dev, true);
 
+        if((uc_pdata->boot_on_time_msec!= -ENODATA)&&(uc_pdata->boot_on_time_msec>0))
+        {
+                //regulator_set_enable(dev, true);
+                regulator_set_value(dev, uc_pdata->init_uV);
+                mdelay(uc_pdata->boot_on_time_msec);
+                regulator_set_value(dev, uc_pdata->max_uV);
+                //regulator_set_enable(dev, false);
+        }
+
 	return ret;
 }
 
@@ -437,6 +446,8 @@ static int regulator_pre_probe(struct udevice *dev)
 	uc_pdata->min_uA = dev_read_u32_default(dev, "regulator-min-microamp",
 						-ENODATA);
 	uc_pdata->max_uA = dev_read_u32_default(dev, "regulator-max-microamp",
+						-ENODATA);
+	uc_pdata->boot_on_time_msec=dev_read_u32_default(dev, "boot_on_time_msec",
 						-ENODATA);
 	uc_pdata->always_on = dev_read_bool(dev, "regulator-always-on");
 	uc_pdata->boot_on = dev_read_bool(dev, "regulator-boot-on");
